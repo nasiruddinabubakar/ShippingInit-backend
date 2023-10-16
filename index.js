@@ -14,11 +14,7 @@ app.all("*", (req, res, next) => {
   next(new AppError(`Cant Find ${req.originalUrl} on this server!`, 404));
 });
 
-const catchAsync = (fn) => {
-  return (req, res, next) => {
-    fn(req, res, next).catch((err) => next(err));
-  };
-};
+
 app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
