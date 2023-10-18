@@ -1,11 +1,14 @@
-// const mysql = require("mysql");
+const mysql = require("mysql");
+const dotenv =require ("dotenv");
 
-// const con = mysql.createConnection({
-//   host: "localhost",
-//   user: "root",
-//   password: "fast123",
-//   database: "sys",
-//   port: 8000,
-// });
+dotenv.config({path:'../.env'});
+const con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "myDB",
+  //   port: 8000,
+});
 
-// module.exports = con;
+
+module.exports = con;
