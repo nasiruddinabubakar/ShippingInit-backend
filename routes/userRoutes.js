@@ -1,33 +1,55 @@
 const express = require("express");
 const con = require("../database/db");
-const { saveUser } = require("../controllers/userController");
+const jwt = require("jsonwebtoken");
+const jwtToken = "db-project";
+const { saveUser, loginUser } = require("../controllers/userController");
 const router = express.Router();
 
-router.post("/register", (req, res) => {
+router.post("/register", async(req, res) => {
   const newuser = req.body;
 
-  saveUser(newuser, (err, result) => {
-    if (err) {
-      return res.status(500).json("Error creating user");
+  await con.query(
+    `select * from customer where email= '${newuser.mail}'`,
+    (err, result) => {
+      if (err) {
+        return res
+          .status(400)
+          .json({ status: "failed", message: "error creating account" });
+      }
+
+      if (result.length > 0) {
+        return res
+          .status(400)
+          .json({ status: "failed", message: "email already exists" });
+      }
+
+      // If the email is not found, proceed to save the user.
+       saveUser( newuser, (err, result) => {
+        if (err) {
+          return res.status(500).json("Error creating user");
+        }
+        delete newuser.password;
+        jwt.sign({ result }, jwtToken, { expiresIn: "2h" }, (err, token) => {
+          res.status(200).json({ status: "success", auth: token, newuser });
+        });
+      });
     }
-    delete newuser.password;
-    res.status(200).json({ status: "success", newuser });
-  });
+  );
 });
 
+router.post("/login", (req, res) => {
+  const newuser = req.body;
+  console.log(newuser);
+  loginUser(newuser, (err, result) => {
+    if (err) {
+      return res.status(500).json("Error loggin user");
+    }
+    delete newuser.password;
+    const {Customer_id}=result;
+    console.log(Customer_id);
+    jwt.sign({ Customer_id }, jwtToken, { expiresIn: "2h" }, (err, token) => {
+      res.status(200).json({ status: "success", auth: token, newuser });
+    });
+  });
+});
 module.exports = router;
-
-// console.log(newuser);
-// res.status(200).json(newuser);
-//   // con.connect((err) => {
-//   //   if (err) {
-//   //     console.log(err);
-//   //   } else {
-//   //     con.query("select * from students", (err, result) => {
-//   //       return res.status(200).json({ status: "success", data: result });
-
-//   //     });
-//   //   }
-//   // });
-
-//   // res.status(200).json("user created successfully");

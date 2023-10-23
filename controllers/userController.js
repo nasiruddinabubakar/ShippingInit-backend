@@ -33,4 +33,28 @@ console.log(id);
   });
 };
 
-module.exports = { saveUser };
+
+const loginUser=(user,callback)=>{
+
+const {mail,password} = user;
+con.query(`select * from customer where email='${mail}'`,(err,result)=>{
+// console.log(result);
+  bcrypt.compare(password, result[0].Password, (err, isMatch) => {
+    if (err) {
+      // Handle the error, e.g., return an error response.
+      callback(err,null);
+    } else if (isMatch) {
+      // The passwords match. Allow the user to log in.
+     callback(null,result[0]);
+    } else {
+      // The passwords do not match. Deny access or show an error message.
+     callback("failed",null);
+    }
+  });
+})
+
+}
+
+module.exports = { saveUser,loginUser };
+// 
+// console.log("hellooo");

@@ -1,5 +1,6 @@
 const express = require("express");
 const userRoutes = require("./routes/userRoutes");
+const orderRoutes=require("./routes/orderRoutes");
 const AppError = require("./utils/appError");
 const cors = require("cors");
 const globalErrorHandler = require("./controllers/errorController");
@@ -9,7 +10,7 @@ app.use(express.json());
 app.use(cors({ origin: "http://localhost:3000" }));
 // Mount user routes
 app.use("/api/users", userRoutes);
-
+app.use("/api",orderRoutes);
 app.all("*", (req, res, next) => {
   next(new AppError(`Cant Find ${req.originalUrl} on this server!`, 404));
 });
