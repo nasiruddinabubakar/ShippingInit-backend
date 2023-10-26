@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/register", async(req, res) => {
   const newuser = req.body;
 
-  await con.query(
+  con.query(
     `select * from customer where email= '${newuser.mail}'`,
     (err, result) => {
       if (err) {
@@ -24,7 +24,7 @@ router.post("/register", async(req, res) => {
       }
 
       // If the email is not found, proceed to save the user.
-       saveUser( newuser, (err, result) => {
+      saveUser(newuser, (err, result) => {
         if (err) {
           return res.status(500).json("Error creating user");
         }
@@ -42,7 +42,7 @@ router.post("/login", (req, res) => {
   console.log(newuser);
   loginUser(newuser, (err, result) => {
     if (err) {
-      return res.status(500).json("Error loggin user");
+      return res.status(500).json({status:"failed",message:"Invalid Email or password"});
     }
     delete newuser.password;
     const {Customer_id}=result;

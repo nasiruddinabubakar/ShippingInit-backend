@@ -48,7 +48,7 @@ con.query(`select * from customer where email='${mail}'`,(err,result)=>{
      callback(null,result[0]);
     } else {
       // The passwords do not match. Deny access or show an error message.
-     callback("failed",null);
+     callback( new Error("password failed"),null);
     }
   });
 })
