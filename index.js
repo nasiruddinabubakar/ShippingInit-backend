@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors({ origin: "http://localhost:3000" }));
 // Mount user routes
 app.use("/api/users", userRoutes);
-app.use("/api",orderRoutes);
+app.use("/api/orders",orderRoutes);
 app.all("*", (req, res, next) => {
   next(new AppError(`Cant Find ${req.originalUrl} on this server!`, 404));
 });

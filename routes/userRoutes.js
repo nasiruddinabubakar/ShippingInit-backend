@@ -39,9 +39,10 @@ router.post("/register", async(req, res) => {
 
 router.post("/login", (req, res) => {
   const newuser = req.body;
-  console.log(newuser);
+ 
   loginUser(newuser, (err, result) => {
     if (err) {
+      console.error(err);
       return res.status(500).json({status:"failed",message:"Invalid Email or password"});
     }
     delete newuser.password;
