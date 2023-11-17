@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 const html = require('./template');
 
 
-async function main() {
+async function sendMail(clientEmail) {
   // Create a nodemailer transporter for Gmail
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -15,8 +15,8 @@ async function main() {
   // Define the email options
   const mailOptions = {
     from: "nasiruddinabubakar@gmail.com", // Sender's email address
-    to: "k214898@nu.edu.pk", // Recipient's email address
-    subject: "Test Email", // Email subject
+    to: clientEmail, // Recipient's email address
+    subject: "Order Confirmation", // Email subject
     html: html, // HTML content of the email
   };
 
@@ -30,4 +30,4 @@ async function main() {
 }
 
 // Call the main function
-module.exports = main;
+module.exports = sendMail;
