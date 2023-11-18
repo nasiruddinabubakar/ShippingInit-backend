@@ -3,6 +3,7 @@ const userRoutes = require("./routes/userRoutes");
 const orderRoutes=require("./routes/orderRoutes");
 const AppError = require("./utils/appError");
 const shipRoutes = require("./routes/shipRoutes");
+const companyRoutes = require("./routes/companyRoutes");
 const cors = require("cors");
 const globalErrorHandler = require("./controllers/errorController");
 const app = express();
@@ -13,6 +14,8 @@ app.use(cors({ origin: "http://localhost:3000" }));
 app.use("/api/users", userRoutes);
 app.use("/api/orders",orderRoutes);
 app.use("/api/ships",shipRoutes);
+app.use("/api/company",companyRoutes);
+
 app.all("*", (req, res, next) => {
   next(new AppError(`Cant Find ${req.originalUrl} on this server!`, 404));
 });

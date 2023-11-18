@@ -9,7 +9,7 @@ router.post("/register", async(req, res) => {
   const newuser = req.body;
 
   con.query(
-    `select * from customer where email= '${newuser.mail}'`,
+    `select * from user where email= '${newuser.mail}'`,
     (err, result) => {
       if (err) {
         return res

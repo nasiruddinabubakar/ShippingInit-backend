@@ -9,6 +9,8 @@ router.post(
   upload.fields([{ name: "image", maxCount: 1 }, { name: "textData" }]),
   (req, res) => {
     const imageBuffer = req.files["image"][0].buffer;
+
+    console.log(imageBuffer.length);
     const { ship_id, name, capacity, build_year } = req.body;
     // Process other text fields from the body
     const sql =
@@ -16,7 +18,7 @@ router.post(
     con.query(
       sql,
       [
-        1,
+        2,
         "613c7ee9-8566-11ee-b900-00e07070c3ee",
         name,
         imageBuffer,
@@ -35,5 +37,25 @@ router.post(
     );
   }
 );
+
+router.get("/getships", (req, res) => {
+
+
+  con.query("select * from ship",(err,result,fields)=>{
+
+    if (err){
+
+      console.error(err);
+
+    }
+  
+    return res.status(200).json(result[1]);
+  })
+
+
+
+
+  
+});
 
 module.exports = router;
