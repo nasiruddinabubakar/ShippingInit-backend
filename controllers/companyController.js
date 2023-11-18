@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const saveCompany = (company, callback) => {
   const id = uuidv4();
-  const { name, mail, password, phone_no, address } = company;
+  const { name, mail, password, phone_no, country } = company;
 
   bcrypt.genSalt(10, function (err, salt) {
     if (err) {
@@ -30,7 +30,7 @@ const saveCompany = (company, callback) => {
 
         const companyQuery =
           "INSERT INTO Company (company_id, name, phone_number, country, user_id) VALUES (?, ?, ?, ?, ?)";
-        const customerValues = [uuidv4(), name, address, phone_no, id];
+        const customerValues = [uuidv4(), name, phone_no, country, id];
 
         con.query(companyQuery, customerValues, (err, result) => {
           if (err) {

@@ -5,7 +5,7 @@ const { saveCompany } = require("../controllers/companyController");
 const jwtToken = "db-project";
 const router = express.Router();
 
-router.post("/auth", async(req, res) => {
+router.post("/register", async(req, res) => {
   const newcompany = req.body;
  
   con.query(
@@ -35,5 +35,8 @@ router.post("/auth", async(req, res) => {
     }
   );
 });
+
+
+
 
 module.exports = router;
