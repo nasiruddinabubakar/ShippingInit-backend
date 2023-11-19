@@ -1,84 +1,63 @@
-const con = require("../database/db");
+const util = require("util");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
+const con = require("../database/db");
 
-const saveCompany = (company, callback) => {
-  const id = uuidv4();
-  const { name, mail, password, phone_no, country } = company;
+const query = util.promisify(con.query).bind(con);
 
-  bcrypt.genSalt(10, function (err, salt) {
-    if (err) {
-      console.error("Error generating salt:", err);
-      return callback(err, null);
-    }
+const saveCompany = async (company) => {
+  try {
+    const id = uuidv4();
+    const { name, mail, password, phone_no, country } = company;
 
-    bcrypt.hash(password, salt, function (err, hash) {
-      if (err) {
-        console.error("Error hashing password:", err);
-        return callback(err, null);
-      }
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
-      const userQuery =
-        "INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)";
-      const userValues = [id, mail, hash, "company"];
+    const userQuery = 'INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)';
+    const userValues = [id, mail, hash, 'company'];
 
-      con.query(userQuery, userValues, (err, result) => {
-        if (err) {
-          console.error("Error saving user:", err);
-          return callback(err, null);
-        }
+    await query(userQuery, userValues);
 
-        const companyQuery =
-          "INSERT INTO Company (company_id, name, phone_number, country, user_id) VALUES (?, ?, ?, ?, ?)";
-        const customerValues = [uuidv4(), name, phone_no, country, id];
+    const companyQuery = 'INSERT INTO Company (company_id, name, phone_number, country, user_id) VALUES (?, ?, ?, ?, ?)';
+    const companyValues = [uuidv4(), name, phone_no, country, id];
 
-        con.query(companyQuery, customerValues, (err, result) => {
-          if (err) {
-            console.error("Error saving customer details:", err);
-            return callback(err, null);
-          }
+    await query(companyQuery, companyValues);
 
-          console.log("User and Company details saved successfully");
-          callback(null, result);
-        });
-      });
-    });
-  });
+    console.log('User and Company details saved successfully');
+  } catch (error) {
+    console.error('Error saving company:', error);
+    
+    throw new Error('Error saving company');
+  }
 };
 
-const loginCompany = (company, callback) => {
+
+const loginCompany = async (company) => {
   const { mail, password } = company;
 
-  const userQuery = "SELECT * from user where email = ?";
+  const userResult = await query("SELECT * FROM user WHERE email = ?", [mail]);
 
-  con.query(userQuery, [mail], (err, result) => {
-    if (err) {
-      return callback(new Error("Error fetching User"), null);
+  if (userResult.length === 0) {
+    throw new Error("User not found");
+  }
+
+  const isMatch = await bcrypt.compare(password, userResult[0].password);
+
+  if (isMatch) {
+    const userID = userResult[0].user_id;
+    const companyResult = await query(
+      "SELECT * FROM Company WHERE user_id = ?",
+      [userID]
+    );
+
+    if (companyResult.length > 0) {
+      return companyResult[0];
+    } else {
+      throw new Error("No Company Data found!");
     }
-
-    bcrypt.compare(password, result[0].password, (err, isMatch) => {
-      if (err) {
-        console.error(err);
-        return callback(new Error("Error Comparing Password"), null);
-      }
-      if (isMatch) {
-        const userID = result[0].user_id;
-        con.query(
-          "Select * from Company where user_id = ?",
-          [userID],
-          (err, companyResult) => {
-            if (err) {
-              console.error(err);
-              return callback(new Error("No Company Data found!"), null);
-            }
-            return callback(null, companyResult[0]);
-          }
-        );
-      } else {
-        return callback(new Error("Password Doesnt Match !"), null);
-      }
-    });
-  });
+  } else {
+    throw new Error("Password doesn't match");
+  }
 };
 
 module.exports = { saveCompany, loginCompany };

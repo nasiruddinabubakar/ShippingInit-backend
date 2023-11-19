@@ -1,48 +1,27 @@
 const con = require("../database/db");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
-const saveUser = (user, callback) => {
+
+const query = util.promisify(con.query).bind(con);
+
+const saveUser = async (user) => {
   const id = uuidv4();
   const { name, mail, password, phone_no, address } = user;
 
-  bcrypt.genSalt(10, function (err, salt) {
-    if (err) {
-      console.error("Error generating salt:", err);
-      return callback(err, null);
-    }
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
 
-    bcrypt.hash(password, salt, function (err, hash) {
-      if (err) {
-        console.error("Error hashing password:", err);
-        return callback(err, null);
-      }
+  const userQuery =
+    "INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)";
+  const userValues = [id, mail, hash, "customer"];
 
-      const userQuery =
-        "INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)";
-      const userValues = [id, mail, hash, "customer"];
+  query(userQuery, userValues);
 
-      con.query(userQuery, userValues, (err, result) => {
-        if (err) {
-          console.error("Error saving user:", err);
-          return callback(err, null);
-        }
+  const customerQuery =
+    "INSERT INTO customer (customer_id, name, address, phone_no, user_id) VALUES (?, ?, ?, ?, ?)";
+  const customerValues = [uuidv4(), name, address, phone_no, id];
 
-        const customerQuery =
-          "INSERT INTO customer (customer_id, name, address, phone_no, user_id) VALUES (?, ?, ?, ?, ?)";
-        const customerValues = [uuidv4(), name, address, phone_no, id];
-
-        con.query(customerQuery, customerValues, (err, result) => {
-          if (err) {
-            console.error("Error saving customer details:", err);
-            return callback(err, null);
-          }
-
-          console.log("User and customer details saved successfully");
-          callback(null, result);
-        });
-      });
-    });
-  });
+  query(customerQuery, customerValues);
 };
 
 const loginUser = (user, callback) => {
