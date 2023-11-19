@@ -46,4 +46,39 @@ const saveCompany = (company, callback) => {
   });
 };
 
-module.exports = { saveCompany };
+const loginCompany = (company, callback) => {
+  const { mail, password } = company;
+
+  const userQuery = "SELECT * from user where email = ?";
+
+  con.query(userQuery, [mail], (err, result) => {
+    if (err) {
+      return callback(new Error("Error fetching User"), null);
+    }
+
+    bcrypt.compare(password, result[0].password, (err, isMatch) => {
+      if (err) {
+        console.error(err);
+        return callback(new Error("Error Comparing Password"), null);
+      }
+      if (isMatch) {
+        const userID = result[0].user_id;
+        con.query(
+          "Select * from Company where user_id = ?",
+          [userID],
+          (err, companyResult) => {
+            if (err) {
+              console.error(err);
+              return callback(new Error("No Company Data found!"), null);
+            }
+            return callback(null, companyResult[0]);
+          }
+        );
+      } else {
+        return callback(new Error("Password Doesnt Match !"), null);
+      }
+    });
+  });
+};
+
+module.exports = { saveCompany, loginCompany };

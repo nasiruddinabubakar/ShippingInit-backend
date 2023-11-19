@@ -2,10 +2,10 @@ const express = require("express");
 const con = require("../database/db");
 const jwt = require("jsonwebtoken");
 const jwtToken = "db-project";
-const { saveUser, loginUser } = require("../controllers/userController");
 const router = express.Router();
+const { saveUser, loginUser } = require("../controllers/userController");
 
-router.post("/register", async(req, res) => {
+router.post("/register", async (req, res) => {
   const newuser = req.body;
 
   con.query(
@@ -39,14 +39,16 @@ router.post("/register", async(req, res) => {
 
 router.post("/login", (req, res) => {
   const newuser = req.body;
- 
+
   loginUser(newuser, (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({status:"failed",message:"Invalid Email or password"});
+      return res
+        .status(500)
+        .json({ status: "failed", message: "Invalid Email or password" });
     }
     delete newuser.password;
-    const {Customer_id}=result;
+    const { Customer_id } = result;
     console.log(Customer_id);
     jwt.sign({ Customer_id }, jwtToken, { expiresIn: "2h" }, (err, token) => {
       res.status(200).json({ status: "success", auth: token, newuser });
