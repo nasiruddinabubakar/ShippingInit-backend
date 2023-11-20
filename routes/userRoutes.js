@@ -46,7 +46,7 @@ router.post("/login", (req, res) => {
     }
     delete newuser.password;
     const { user_id } = result;
-    console.log(Customer_id);
+    console.log(user_id);
     jwt.sign({ user_id }, jwtToken, { expiresIn: "2h" }, (err, token) => {
       res.status(200).json({ status: "success", auth: token, newuser });
     });

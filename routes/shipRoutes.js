@@ -3,6 +3,8 @@ const multer = require("multer");
 const con = require("../database/db");
 const router = express.Router();
 const storage = multer.memoryStorage();
+const { v4: uuidv4 } = require("uuid");
+
 const upload = multer({ storage: storage });
 router.post(
   "/upload",
@@ -18,8 +20,8 @@ router.post(
     con.query(
       sql,
       [
-        2,
-        "613c7ee9-8566-11ee-b900-00e07070c3ee",
+        uuidv4(),
+        "a757dbb0-9f6c-4186-b6f1-c9a55d6dcd9c",
         name,
         imageBuffer,
         capacity,
@@ -48,8 +50,8 @@ router.get("/getships", (req, res) => {
       console.error(err);
 
     }
-  
-    return res.status(200).json(result[1]);
+    console.log(result);
+    return res.status(200).json(result[0]);
   })
 
 
