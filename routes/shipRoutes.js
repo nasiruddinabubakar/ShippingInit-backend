@@ -50,7 +50,7 @@ router.get("/getships", (req, res) => {
       console.error(err);
 
     }
-    console.log(result);
+  
     return res.status(200).json(result[0]);
   })
 
