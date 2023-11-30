@@ -45,7 +45,9 @@ router.post(
 );
 
 router.get("/getships", (req, res) => {
-  con.query("select * from ship", (err, result, fields) => {
+  const {shipid} = req.headers;
+  console.log(shipid);
+  con.query("select * from ship where ship_id = ?",[shipid], (err, result, fields) => {
     if (err) {
       console.error(err);
     }
