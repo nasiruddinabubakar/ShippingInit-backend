@@ -3,17 +3,19 @@ const con = require("../database/db");
 const jwt = require("jsonwebtoken");
 const jwtToken = "db-project";
 const geolib = require("geolib");
+const util = require("util");
 const router = express.Router();
 const {
   saveCompany,
   loginCompany,
   getDetails,
 } = require("../controllers/companyController");
+const query = util.promisify(con.query).bind(con);
 
 let companyID;
 function verifyToken(req, res, next) {
   let token = req.headers["authorization"];
-
+  console.log(token);
   if (token) {
     jwt.verify(token, jwtToken, (err, decoded) => {
       if (err) {
@@ -22,6 +24,7 @@ function verifyToken(req, res, next) {
         return res
           .status(400)
           .json({ status: "failed", meesage: "Token failed." });
+          
       } else {
         // Token verification succeeded,
         console.log("User ID:", decoded.user_id);
@@ -78,20 +81,20 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/getdetails", verifyToken, async (req, res) => {
+router.get("/getdetails", verifyToken,async (req, res) => {
   const details = await getDetails(companyID);
 
-  let distance =
-    geolib.getDistance(
-      { latitude: 32.4279, longitude: 53.688 },
-      { latitude: 35.8617, longitude: 104.1954 }
-    ) / 1000;
-
-  console.log(
-    `The distance between the two locations is ${distance} kilometers.`
-  );
-
+console.log(companyID, details);
   return res.status(200).json({ data: details });
+});
+
+router.get("/getShips", verifyToken, async (req, res) => {
+  const ships = await query("Select * from ship where company_id = ? ", [
+    companyID,
+  ]);
+  console.log(ships);
+
+  return res.status(200).json({ status: "success", ships });
 });
 
 module.exports = router;

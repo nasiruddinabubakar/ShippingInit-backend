@@ -1,10 +1,11 @@
 const express = require("express");
 const multer = require("multer");
+const util = require("util");
 const con = require("../database/db");
 const router = express.Router();
 const storage = multer.memoryStorage();
 const { v4: uuidv4 } = require("uuid");
-
+const query = util.promisify(con.query).bind(con);
 const geolib = require("geolib");
 
 const upload = multer({ storage: storage });
@@ -74,25 +75,66 @@ router.post("/newship", async (req, res) => {
     return {
       country,
       latlng: response[0].latlng,
-      time:0
+      time: 0,
     };
   });
 
   const response = await Promise.all(promises); //await apiRequest.json();
-
+  let prevTime = 0,
+    currTime = 0;
   const len = response.length;
   let times = [];
-  for (let i = 0; i < len-1; i++) {
-
-    response[i+1].time= calculateDistance(
-      response[i].latlng[0],
-      response[i].latlng[1],
-      response[i + 1].latlng[0],
-      response[i + 1].latlng[1]
-    )/25;
+  for (let i = 0; i < len - 1; i++) {
+    currTime = Math.round(
+      calculateDistance(
+        response[i].latlng[0],
+        response[i].latlng[1],
+        response[i + 1].latlng[0],
+        response[i + 1].latlng[1]
+      ) /
+        25 /
+        24
+    );
+    console.log(response[i].country, response[i + 1].country, currTime);
+    currTime += prevTime;
+    prevTime = currTime;
+    response[i + 1].time = currTime;
   }
 
+  const startCountry = response[0].country;
+
+  const routeID = uuidv4();
+  const shipID = "0153eb28-3fc1-4158-8d3e-7ee2488ed33f";
+  await query(
+    "Insert into route (route_id, ship_id, start_country,no_lags) values (?, ?, ?, ?)",
+    [routeID, shipID, startCountry, len - 1]
+  );
+
+  for (var i = 1; i <= len - 1; i++) {
+    await query(
+      "Insert into `Lag` (route_id, lag_id, lag_no, country, time) values(?, ?, ?, ?, ?)",
+      [routeID, uuidv4(), i, response[i].country, response[i].time]
+    );
+  }
   return res.status(200).json(response);
+});
+
+router.post("/route", async (req, res) => {
+  const { pickup, dropoff } = req.body;
+
+  try {
+    const result = await query(
+      "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no",
+      [pickup, dropoff]
+    );
+
+    return res.json({ status: "success", ships: result });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ status: "failed", message: "Error getting ships" });
+  }
 });
 
 module.exports = router;
