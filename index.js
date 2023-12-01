@@ -9,9 +9,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const app = express();
 
 app.use(express.json());
-app.use(
-  cors({ origin: ["http://localhost:3000", "http://localhost:3001"] })
-);
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001"] }));
 //mount user routes
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);

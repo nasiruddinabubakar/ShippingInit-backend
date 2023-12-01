@@ -10,11 +10,11 @@ router.post("/register", async (req, res) => {
   try {
     const newuser = req.body;
 
-    const [result] = await con.query("select * from user where email= ?", [
+    const result = await con.query("select * from user where email= ?", [
       newuser.mail,
     ]);
 
-    if (result.length > 0) {
+    if (result?.length > 0) {
       return res
         .status(400)
         .json({ status: "failed", message: "email already exists" });
@@ -52,4 +52,28 @@ router.post("/login", (req, res) => {
     });
   });
 });
+
+router.get("/authorization", (req, res) => {
+  let token = req.headers["authorization"];
+
+  if (token) {
+    jwt.verify(token, jwtToken, (err, decoded) => {
+      if (err) {
+        // Token verification failed
+        console.error("Token verification failed:", err);
+        return res
+          .status(400)
+          .json({ status: "failed", meesage: "Token failed." });
+      } else {
+        return res
+          .status(200)
+          .json({ status: "success", meesage: "Valid Token." });
+        console.log("User ID:", decoded.user_id);
+      }
+    });
+  }
+});
+
+
+
 module.exports = router;
