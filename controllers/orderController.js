@@ -15,6 +15,7 @@ const saveOrder = async (order, userID) => {
   const customerId = result[0].Customer_id;
   const cargoId = uuidv4();
   try {
+    con.beginTransaction();
     await query(
       "Insert into Cargo(cargo_id, consignee_name, weight_in_tonne, type, description, fragile) values (?,?,?,?,?,?)",
       [
@@ -25,6 +26,13 @@ const saveOrder = async (order, userID) => {
         orderDescription,
         fragile,
       ]
+    );
+    const updateWeightQuery =
+      "UPDATE Ship SET currentWeight = currentWeight + ? WHERE ship_id = ?";
+    const updateWeightValues = [orderWeight, shipId];
+    const updateWeightResult = await query(
+      updateWeightQuery,
+      updateWeightValues
     );
 
     await query(
@@ -41,7 +49,9 @@ const saveOrder = async (order, userID) => {
         0, // Assuming 'delivered' is a boolean column and you're inserting 0 for false
       ]
     );
+    con.commit();
   } catch (err) {
+    con.rollback();
     console.error(err);
   }
   return;
@@ -53,12 +63,13 @@ const getDetails = async (userID) => {
     [userID]
   );
   const customerId = result[0].Customer_id;
+
   console.log(customerId);
+  await query("CALL UpdateDeliveredStatusNew()");
   const orders = await query(
-    "SELECT consignee_name, pickup, dropoff FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
+    "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
     [customerId]
   );
-  
 
   return orders;
 };
