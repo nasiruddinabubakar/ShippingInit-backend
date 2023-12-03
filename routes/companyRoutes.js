@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
       [newCompany.mail]
     );
 
-    if (existingUser.length > 0) {
+    if (existingUser?.length > 0) {
       return res
         .status(400)
         .json({ status: "failed", message: "Email already exists" });
@@ -71,7 +71,7 @@ router.post("/login", async (req, res) => {
   try {
     const result = await loginCompany(company);
     const user_id = result.company_id;
-    const token = jwt.sign({ user_id }, jwtToken, { expiresIn: "2h" });
+    const token = jwt.sign({ user_id }, jwtToken, { expiresIn: "10h" });
     return res
       .status(200)
       .json({ status: "Success", auth: token, data: result });
@@ -82,19 +82,31 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/getdetails", verifyToken,async (req, res) => {
+  try{
   const details = await getDetails(companyID);
 
 console.log(companyID, details);
   return res.status(200).json({ data: details });
+  }catch(Err){
+
+    console.error(Err.meesage);
+  }
+
+
 });
 
 router.get("/getShips", verifyToken, async (req, res) => {
+  try{
   const ships = await query("Select * from ship where company_id = ? ", [
     companyID,
   ]);
   console.log(ships);
 
   return res.status(200).json({ status: "success", ships });
+  }catch(Err){
+    console.log(Err.message);
+  }
+
 });
 
 module.exports = router;

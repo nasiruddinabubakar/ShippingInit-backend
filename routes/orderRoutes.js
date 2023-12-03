@@ -3,7 +3,11 @@ const con = require("../database/db");
 const jwt = require("jsonwebtoken");
 const sendMail = require("../utils/nodeMailer");
 const jwtToken = "db-project";
-const { saveOrder, getDetails } = require("../controllers/orderController");
+const {
+  saveOrder,
+  getDetails,
+  getCompanyOrders,
+} = require("../controllers/orderController");
 
 const util = require("util");
 const query = util.promisify(con.query).bind(con);
@@ -11,8 +15,16 @@ const router = express.Router();
 let userID = null;
 router.get("/history", verifyToken, async (req, res) => {
   try {
-  
     const orders = await getDetails(userID);
+    return res.status(200).json({ status: "success", orders });
+  } catch (err) {
+    console.error(err.message);
+    return res.json("Internal Server Error");
+  }
+});
+router.get("/companyhistory", verifyToken, async (req, res) => {
+  try {
+    const orders = await getCompanyOrders(userID);
     return res.status(200).json({ status: "success", orders });
   } catch (err) {
     console.error(err.message);
@@ -45,7 +57,6 @@ router.get("/:myVar", verifyToken, async (req, res) => {
   const myVar = req.params.myVar;
   console.log(myVar);
   try {
-    
     const orderDetail = await query(
       "select weight_in_tonne, ship.name,email from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
       [myVar]

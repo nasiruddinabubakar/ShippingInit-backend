@@ -58,6 +58,7 @@ const saveOrder = async (order, userID) => {
 };
 
 const getDetails = async (userID) => {
+  try{
   const result = await query(
     "Select Customer_id from Customer where user_id = ?",
     [userID]
@@ -70,8 +71,22 @@ const getDetails = async (userID) => {
     "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
     [customerId]
   );
-
   return orders;
-};
+  }catch(Err){
+    console.error(Err.message);
+  }
 
-module.exports = { saveOrder, getDetails };
+};
+const getCompanyOrders = async (userId) =>{
+  try{
+    const querry = "SELECT * FROM `booking` WHERE `ship_id` In (SELECT `ship_id` FROM `company` JOIN `ship` ON `company`.`company_id` = `ship`.`company_id` WHERE `company`.`company_id` = ?)";
+    
+    const orders = await query(querry, [userId]);
+    console.log(orders)
+    return orders;
+  }catch(error){
+    console.log(error)
+  }
+}
+
+module.exports = { saveOrder, getDetails,getCompanyOrders };
