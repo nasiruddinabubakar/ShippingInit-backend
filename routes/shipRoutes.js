@@ -101,7 +101,7 @@ router.post(
       return res.status(200).json({ status: "Success", message: "Ship added" });
       
     } catch (Error) {
-      console.err(Error.message);
+      console.error(Error.message);
     }
   }
 );
