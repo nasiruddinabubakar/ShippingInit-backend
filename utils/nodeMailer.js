@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const html = require('./template');
+const invoice = require("./invoice");
 
 
 async function sendMail(clientEmail) {

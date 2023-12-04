@@ -7,7 +7,15 @@ const saveOrder = async (order, userID) => {
   const { consigneeName, orderWeight, orderType, orderDescription, fragile } =
     order.order;
   const { shipId, pickup, dropoff } = order.route;
-  console.log();
+  const { days, price } = order;
+  // Get the current date
+  var currentDate = new Date();
+  console.log(order);
+  // Add 28 days to the current date
+  var futureDate = new Date(currentDate);
+  futureDate.setDate(currentDate.getDate() + days);
+  var deliverydate = futureDate;
+  console.log(deliverydate);
   const result = await query(
     "Select Customer_id from Customer where user_id = ?",
     [userID]
@@ -34,13 +42,13 @@ const saveOrder = async (order, userID) => {
       updateWeightQuery,
       updateWeightValues
     );
-
+    const booking_id = uuidv4();
     await query(
       "INSERT INTO booking(booking_id, booking_date, delivery_date, pickup, dropoff, ship_id, cargo_id, customer_id, delivered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
-        uuidv4(),
+        booking_id,
         new Date(),
-        new Date(),
+        deliverydate,
         pickup,
         dropoff,
         shipId,
@@ -49,44 +57,50 @@ const saveOrder = async (order, userID) => {
         0, // Assuming 'delivered' is a boolean column and you're inserting 0 for false
       ]
     );
+    await query(
+      "INSERT INTO Invoices(invoice_id,amount_due,booking_id) values(?, ?, ?)",
+       [uuidv4(), price,booking_id]
+    );
     con.commit();
+    return;
   } catch (err) {
     con.rollback();
     console.error(err);
+    return new Error("Query Failed");
   }
-  return;
+  
 };
 
 const getDetails = async (userID) => {
-  try{
-  const result = await query(
-    "Select Customer_id from Customer where user_id = ?",
-    [userID]
-  );
-  const customerId = result[0].Customer_id;
+  try {
+    const result = await query(
+      "Select Customer_id from Customer where user_id = ?",
+      [userID]
+    );
+    const customerId = result[0].Customer_id;
 
-  console.log(customerId);
-  await query("CALL UpdateDeliveredStatusNew()");
-  const orders = await query(
-    "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
-    [customerId]
-  );
-  return orders;
-  }catch(Err){
+    console.log(customerId);
+    await query("CALL UpdateDeliveredStatusNew()");
+    const orders = await query(
+      "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
+      [customerId]
+    );
+    return orders;
+  } catch (Err) {
     console.error(Err.message);
   }
-
 };
-const getCompanyOrders = async (userId) =>{
-  try{
-    const querry = "SELECT * FROM `booking` WHERE `ship_id` In (SELECT `ship_id` FROM `company` JOIN `ship` ON `company`.`company_id` = `ship`.`company_id` WHERE `company`.`company_id` = ?)";
-    
-    const orders = await query(querry, [userId]);
-    console.log(orders)
-    return orders;
-  }catch(error){
-    console.log(error)
-  }
-}
+const getCompanyOrders = async (userId) => {
+  try {
+    const querry =
+      "SELECT * FROM `booking` WHERE `ship_id` In (SELECT `ship_id` FROM `company` JOIN `ship` ON `company`.`company_id` = `ship`.`company_id` WHERE `company`.`company_id` = ?)";
 
-module.exports = { saveOrder, getDetails,getCompanyOrders };
+    const orders = await query(querry, [userId]);
+    console.log(orders);
+    return orders;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = { saveOrder, getDetails, getCompanyOrders };

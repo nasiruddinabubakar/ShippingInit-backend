@@ -12,48 +12,114 @@ const upload = multer({ storage: storage });
 router.post(
   "/upload",
   upload.fields([{ name: "image", maxCount: 1 }, { name: "textData" }]),
-  (req, res) => {
+  async (req, res) => {
+    try {
     const imageBuffer = req.files["image"][0].buffer;
-
+    console.log(req.body);
+    console.log("hello");
     console.log(imageBuffer.length);
-    const { ship_id, name, capacity, build_year } = req.body;
+    const companyID = req.headers.companyid;
+    const name = req.body.name;
+    const capacity = req.body.capacity;
+    const model = req.body.model;
+    const price = req.body.price;
     // Process other text fields from the body
-    const sql =
-      "INSERT INTO ship (ship_id, company_id, name,image, capacity, build_year, currentWeight) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    con.query(
-      sql,
-      [
-        uuidv4(),
-        "a757dbb0-9f6c-4186-b6f1-c9a55d6dcd9c",
+    const ship_id = uuidv4();
+   
+      con.beginTransaction();
+      let sql =
+        "INSERT INTO ship (ship_id, company_id, name,image, capacity, build_year, currentWeight, start_date, price_per_tonne) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      await query(sql, [
+        ship_id,
+        companyID,
         name,
         imageBuffer,
         capacity,
-        build_year,
+        model,
         0,
-      ],
-      (err, result) => {
-        if (err) {
-          console.error("Error inserting data into MySQL:", err);
-          res.status(500).send("Internal Server Error");
-        } else {
-          console.log("Data inserted into MySQL");
-          res.status(200).send("Form data uploaded successfully");
-        }
+        new Date(),
+        Number(price),
+      ]);
+
+      let routesArr = req.body.terminal.split(",");
+      console.log(routesArr);
+
+      const promises = routesArr.map(async (country) => {
+        console.log(country);
+        const apiRequest = await fetch(
+          "https://restcountries.com/v3.1/name/" +
+            country +
+            "?fullText=true&fields=latlng"
+        );
+        const response = await apiRequest.json();
+        console.log(response);
+
+        return {
+          country,
+          latlng: response[0].latlng,
+          time: 0,
+        };
+      });
+
+      const response = await Promise.all(promises); //await apiRequest.json();
+      let prevTime = 0,
+        currTime = 0;
+      const len = response.length;
+      let times = [];
+      for (let i = 0; i < len - 1; i++) {
+        currTime = Math.round(
+          calculateDistance(
+            response[i].latlng[0],
+            response[i].latlng[1],
+            response[i + 1].latlng[0],
+            response[i + 1].latlng[1]
+          ) /
+            25 /
+            24
+        );
+        console.log(response[i].country, response[i + 1].country, currTime);
+        currTime += prevTime;
+        prevTime = currTime;
+        response[i + 1].time = currTime;
       }
-    );
+
+      const startCountry = response[0].country;
+
+      const routeID = uuidv4();
+      const sql2 =
+        "INSERT INTO route (route_id, ship_id, start_country, no_lags) VALUES (?, ?, ?, ?)";
+      await query(sql2, [routeID, ship_id, startCountry, len - 1]);
+
+      const sql3 = 0;
+      for (var i = 1; i <= len - 1; i++) {
+        await query(
+          "INSERT INTO `Lag` (lag_id, route_id, lag_no, country, time) VALUES (?, ?, ?, ?, ?)",
+          [uuidv4(), routeID, i, response[i].country, response[i].time]
+        );
+      }
+      con.commit();
+      return res.status(200).json({ status: "Success", message: "Ship added" });
+      
+    } catch (Error) {
+      console.err(Error.message);
+    }
   }
 );
 
 router.get("/getships", (req, res) => {
-  const {shipid} = req.headers;
+  const { shipid } = req.headers;
   console.log(shipid);
-  con.query("select * from ship where ship_id = ?",[shipid], (err, result, fields) => {
-    if (err) {
-      console.error(err);
-    }
+  con.query(
+    "select s.*,user.email,company.name as 'Company_Name',company.country,company.phone_number,route.start_country from ship s join company on s.company_id=company.company_id join user on company.user_id=user.user_id join route on s.ship_id=route.ship_id where s.ship_id = ?",
+    [shipid],
+    (err, result, fields) => {
+      if (err) {
+        console.error(err);
+      }
 
-    return res.status(200).json(result[0]);
-  });
+      return res.status(200).json(result[0]);
+    }
+  );
 });
 
 const calculateDistance = (x1, y1, x2, y2) => {
@@ -123,14 +189,27 @@ router.post("/newship", async (req, res) => {
 
 router.post("/route", async (req, res) => {
   const { pickup, dropoff } = req.body;
-
+  console.log(pickup, dropoff);
   try {
     const result = await query(
       "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no",
       [pickup, dropoff]
     );
 
-    return res.json({ status: "success", ships: result });
+    if (result.length > 0) {
+      return res.json({ status: "success", ships: result });
+    } else {
+      const newResult = await query(
+        "SELECT distinct s.ship_id, s.name, s.image, (l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (r.start_country = ? AND l1.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY",
+        [pickup, dropoff]
+      );
+      console.log(newResult);
+      if (newResult.length > 0) {
+        return res.json({ status: "success", ships: newResult });
+      } else {
+        return res.json({ status: "failed", ships: [] });
+      }
+    }
   } catch (err) {
     console.error(err);
     return res

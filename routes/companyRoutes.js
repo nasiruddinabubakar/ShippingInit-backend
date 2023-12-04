@@ -39,17 +39,7 @@ router.post("/register", async (req, res) => {
   const newCompany = req.body;
 
   try {
-    // Check if the email already exists
-    const [existingUser] = await con.query(
-      "SELECT * FROM user WHERE email = ?",
-      [newCompany.mail]
-    );
-
-    if (existingUser?.length > 0) {
-      return res
-        .status(400)
-        .json({ status: "failed", message: "Email already exists" });
-    }
+   
 
     // Save the company
     await saveCompany(newCompany);
