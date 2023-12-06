@@ -14,21 +14,21 @@ router.post(
   upload.fields([{ name: "image", maxCount: 1 }, { name: "textData" }]),
   async (req, res) => {
     try {
-    const imageBuffer = req.files["image"][0].buffer;
-    console.log(req.body);
-    console.log("hello");
-    console.log(imageBuffer.length);
-    const companyID = req.headers.companyid;
-    const name = req.body.name;
-    const capacity = req.body.capacity;
-    const model = req.body.model;
-    const price = req.body.price;
-    // Process other text fields from the body
-    const ship_id = uuidv4();
-   
+      const imageBuffer = req.files["image"][0].buffer;
+      console.log(req.body);
+      console.log("hello");
+      console.log(imageBuffer.length);
+      const companyID = req.headers.companyid;
+      const name = req.body.name;
+      const capacity = req.body.capacity;
+      const model = req.body.model;
+      const price = req.body.price;
+      // Process other text fields from the body
+      const ship_id = uuidv4();
+
       con.beginTransaction();
       let sql =
-        "INSERT INTO ship (ship_id, company_id, name,image, capacity, build_year, currentWeight, start_date, price_per_tonne) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "INSERT INTO ship (ship_id, company_id, name,image, capacity, build_year, currentWeight, start_date, price_per_tonne,is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,? )";
       await query(sql, [
         ship_id,
         companyID,
@@ -39,6 +39,7 @@ router.post(
         0,
         new Date(),
         Number(price),
+        0
       ]);
 
       let routesArr = req.body.terminal.split(",");
@@ -99,7 +100,6 @@ router.post(
       }
       con.commit();
       return res.status(200).json({ status: "Success", message: "Ship added" });
-      
     } catch (Error) {
       console.error(Error.message);
     }
@@ -110,7 +110,7 @@ router.get("/getships", (req, res) => {
   const { shipid } = req.headers;
   console.log(shipid);
   con.query(
-    "select s.*,user.email,company.name as 'Company_Name',company.country,company.phone_number,route.start_country from ship s join company on s.company_id=company.company_id join user on company.user_id=user.user_id join route on s.ship_id=route.ship_id where s.ship_id = ?",
+    "select s.*,user.email,company.name as 'Company_Name', company.country,company.phone_number,route.start_country, COUNT(booking.booking_id)as 'no_booking' from ship s join company on s.company_id=company.company_id join booking on booking.ship_id = s.ship_id join user on company.user_id=user.user_id join route on s.ship_id=route.ship_id where s.ship_id = ?",
     [shipid],
     (err, result, fields) => {
       if (err) {
@@ -120,6 +120,63 @@ router.get("/getships", (req, res) => {
       return res.status(200).json(result[0]);
     }
   );
+});
+//delete ship
+router.delete("/deleteship", (req, res) => {
+  const { shipid } = req.headers;
+  console.log("hello")
+  con.query(
+    "DELETE FROM `lag` WHERE route_id IN (SELECT route_id FROM route WHERE ship_id = ?)",
+    [shipid],
+    (err, respond) => {
+      if (err) {
+        return err;
+      }
+    }
+  );
+
+  con.query(
+    "DELETE FROM route WHERE ship_id = ?",
+    [shipid],
+    (err, respond) => {
+      if (err) {
+        return err;
+      }
+    }
+  );
+
+  con.query(
+    "DELETE FROM ship WHERE ship_id = ?",
+    [shipid],
+    (err, respond) => {
+      if (err) {
+        return err;
+      }
+        return res.status(200).json({messege: "deleted"});
+      
+    }
+  );
+});
+router.post("/availableship", (req, res)=>{
+  const { shipid } = req.headers;
+  console.log("hello")
+  con.query("UPDATE ship SET is_deleted = 0 WHERE ship_id = ?", [shipid], (err, respond)=>{
+    if(err){
+      console.log(err)
+    }
+    return res.status(200).json({messege: "messege"});
+  })
+});
+
+router.post("/unavailableship", (req, res)=>{
+  console.log("hello")
+  const { shipid } = req.headers;
+  con.query("UPDATE ship SET is_deleted = 1 WHERE ship_id = ?", [shipid], (err, respond)=>{
+    if(err){
+      console.log(err)
+    }
+    return res.status(200).json({messege: "messege"});
+  })
 });
 
 const calculateDistance = (x1, y1, x2, y2) => {
@@ -192,16 +249,16 @@ router.post("/route", async (req, res) => {
   console.log(pickup, dropoff);
   try {
     const result = await query(
-      "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no",
-      [pickup, dropoff]
+      "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no and s.is_deleted=?",
+      [pickup, dropoff,0]
     );
 
     if (result.length > 0) {
       return res.json({ status: "success", ships: result });
     } else {
       const newResult = await query(
-        "SELECT distinct s.ship_id, s.name, s.image, (l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (r.start_country = ? AND l1.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY",
-        [pickup, dropoff]
+        "SELECT distinct s.ship_id, s.name, s.image, (l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (r.start_country = ? AND l1.country = ?) AND (CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY) AND s.is_deleted=?",
+        [pickup, dropoff,0]
       );
       console.log(newResult);
       if (newResult.length > 0) {

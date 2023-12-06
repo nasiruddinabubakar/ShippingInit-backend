@@ -8,8 +8,8 @@ const query = util.promisify(con.query).bind(con);
 const saveCompany = async (company) => {
   try {
     const id = uuidv4();
-    const { name, mail, password, phone_no, country } = company;
-
+    const { name, mail, password, phone_no, address } = company;
+    console.log(company);
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
@@ -20,8 +20,8 @@ const saveCompany = async (company) => {
     await query(userQuery, userValues);
 
     const companyQuery =
-      "INSERT INTO Company (company_id, name, phone_number, country, user_id) VALUES (?, ?, ?, ?, ?)";
-    const companyValues = [uuidv4(), name, phone_no, country, id];
+      "INSERT INTO Company (company_id, name, phone_number, country, sales, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+    const companyValues = [uuidv4(), name, phone_no, address, 0, id];
 
     await query(companyQuery, companyValues);
 
@@ -66,7 +66,8 @@ const getDetails = async (companyID) => {
     noShips: 0,
     noOrders: 0,
     noCustomers: 0,
-    ships: [],
+    sales: 0,
+    ships: []
   };
 
   const shipResult = await query(
@@ -84,12 +85,28 @@ const getDetails = async (companyID) => {
     "SELECT COUNT(DISTINCT c.customer_id) AS customer_count FROM Customer c JOIN booking b ON c.customer_id = b.customer_id JOIN Ship s ON b.ship_id = s.ship_id JOIN Company co ON s.company_id = co.company_id WHERE co.company_id = ?",
     [companyID]
   );
-
   companyData.noCustomers = customerResult[0].customer_count;
+  const salesResult = await query(
+    "SELECT sales from company where company_id = ?",
+    [companyID]
+  );
+    companyData.sales = salesResult[0].sales;
+  const shipsDetails = await query(
+    "select name, currentWeight, capacity, start_country, route_id from ship join route on ship.ship_id=route.ship_id where company_id = ?",
+    [companyID]
+  );
 
-  const shipsDetails = await query ("select name, currentWeight from ship where company_id = ?",[companyID]);
-    
-    shipsDetails.map(item=>companyData.ships.push(item));
+  const ships = shipsDetails.map(async (item) => {
+    const remainingRoutes = await query(
+      "select country from `lag` where route_id = ? order by lag_no;",
+      [item.route_id]
+    );
+
+    companyData.ships.push({item, remainingRoutes});
+
+    console.log(companyData)
+  });
+  const response = await Promise.all(ships);
   return companyData;
 };
 

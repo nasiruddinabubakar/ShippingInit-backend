@@ -82,8 +82,8 @@ const getDetails = async (userID) => {
     console.log(customerId);
     await query("CALL UpdateDeliveredStatusNew()");
     const orders = await query(
-      "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ?",
-      [customerId]
+      "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ? AND booking.isdeleted = ?",
+      [customerId,0]
     );
     return orders;
   } catch (Err) {

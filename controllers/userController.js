@@ -23,6 +23,8 @@ const saveUser = async (user) => {
   const customerValues = [uuidv4(), name, address, phone_no, id];
 
   query(customerQuery, customerValues);
+
+  return { id: id };
 };
 
 const loginUser = (user, callback) => {

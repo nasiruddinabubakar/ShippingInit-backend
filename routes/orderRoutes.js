@@ -52,13 +52,23 @@ router.post("/neworder", verifyToken, async (req, res) => {
       .json({ status: "failed", message: "Unknown Error Occurred!" });
   }
 });
+router.delete("/:myVar",verifyToken,async (req,res)=>{
+  const myVar = req.params.myVar;
+  try{
+   await query ("UPDATE booking SET isdeleted = ? where booking_id = ?",[1,myVar]);
 
+  return res.status(200).json({status:"success",message:"order deleted!"});
+  }catch(Err){
+    console.error(Err);
+    return res.status(200).json({status:"failed",message:"error occured!"});
+  }
+})
 router.get("/:myVar", verifyToken, async (req, res) => {
   const myVar = req.params.myVar;
   console.log(myVar);
   try {
     const orderDetail = await query(
-      "select weight_in_tonne, ship.name,email from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
+      "select weight_in_tonne, ship.name,email,isdeleted from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
       [myVar]
     );
     console.log(orderDetail[0]);

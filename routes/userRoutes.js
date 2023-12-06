@@ -3,14 +3,16 @@ const con = require("../database/db");
 const jwt = require("jsonwebtoken");
 const jwtToken = "db-project";
 const router = express.Router();
+const util = require("util");
 
+const query = util.promisify(con.query).bind(con);
 const { saveUser, loginUser } = require("../controllers/userController");
 
 router.post("/register", async (req, res) => {
   try {
     const newuser = req.body;
 
-    const result = await con.query("select * from user where email= ?", [
+    const result =  await query("select * from user where email= ?", [
       newuser.mail,
     ]);
 
