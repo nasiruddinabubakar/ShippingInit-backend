@@ -110,7 +110,7 @@ router.get("/getships", (req, res) => {
   const { shipid } = req.headers;
   console.log(shipid);
   con.query(
-    "select s.*,user.email,company.name as 'Company_Name', company.country,company.phone_number,route.start_country, COUNT(booking.booking_id)as 'no_booking' from `ship` s join `COMPANY` on s.company_id=company.company_id join booking on booking.ship_id = s.ship_id join `USER` on company.user_id=user.user_id join route on s.ship_id=route.ship_id where s.ship_id = ?",
+    "select s.*,USER.email,company.name as 'Company_Name', company.country,company.phone_number,route.start_country, COUNT(booking.booking_id)as 'no_booking' from `ship` s join `COMPANY` on s.company_id=company.company_id join booking on booking.ship_id = s.ship_id join `USER` on company.user_id=user.user_id join route on s.ship_id=route.ship_id where s.ship_id = ?",
     [shipid],
     (err, result, fields) => {
       if (err) {
