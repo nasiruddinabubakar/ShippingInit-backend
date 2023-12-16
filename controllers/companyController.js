@@ -36,7 +36,7 @@ const saveCompany = async (company) => {
 const loginCompany = async (company) => {
   const { mail, password } = company;
 
-  const userResult = await query("SELECT * FROM `user` WHERE email = ?", [mail]);
+  const userResult = await query("SELECT * FROM `USER` WHERE email = ?", [mail]);
 
   if (userResult.length === 0) {
     throw new Error("User not found");
@@ -47,7 +47,7 @@ const loginCompany = async (company) => {
   if (isMatch) {
     const userID = userResult[0].user_id;
     const companyResult = await query(
-      "SELECT * FROM `company` WHERE user_id = ?",
+      "SELECT * FROM `COMPANY` WHERE user_id = ?",
       [userID]
     );
 
