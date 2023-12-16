@@ -14,13 +14,13 @@ const saveCompany = async (company) => {
     const hash = await bcrypt.hash(password, salt);
 
     const userQuery =
-      "INSERT INTO `user` (user_id, email, password, role) VALUES (?, ?, ?, ?)";
+      "INSERT INTO `USER` (user_id, email, password, role) VALUES (?, ?, ?, ?)";
     const userValues = [id, mail, hash, "company"];
 
     await query(userQuery, userValues);
 
     const companyQuery =
-      "INSERT INTO `Company` (company_id, name, phone_number, country, sales, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+      "INSERT INTO `COMPANY` (company_id, name, phone_number, country, sales, user_id) VALUES (?, ?, ?, ?, ?, ?)";
     const companyValues = [uuidv4(), name, phone_no, address, 0, id];
 
     await query(companyQuery, companyValues);
