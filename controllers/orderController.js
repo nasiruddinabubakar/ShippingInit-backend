@@ -17,7 +17,7 @@ const saveOrder = async (order, userID) => {
   var deliverydate = futureDate;
   console.log(deliverydate);
   const result = await query(
-    "Select Customer_id from `Customer` where user_id = ?",
+    "Select Customer_id from `customer` where user_id = ?",
     [userID]
   );
   const customerId = result[0].Customer_id;
@@ -25,7 +25,7 @@ const saveOrder = async (order, userID) => {
   try {
     con.beginTransaction();
     await query(
-      "Insert into `Cargo`(cargo_id, consignee_name, weight_in_tonne, type, description, fragile) values (?,?,?,?,?,?)",
+      "Insert into `cargo`(cargo_id, consignee_name, weight_in_tonne, type, description, fragile) values (?,?,?,?,?,?)",
       [
         cargoId,
         consigneeName,
@@ -58,7 +58,7 @@ const saveOrder = async (order, userID) => {
       ]
     );
     await query(
-      "INSERT INTO `Invoices`(invoice_id,amount_due,booking_id) values(?, ?, ?)",
+      "INSERT INTO `invoices`(invoice_id,amount_due,booking_id) values(?, ?, ?)",
        [uuidv4(), price,booking_id]
     );
     con.commit();

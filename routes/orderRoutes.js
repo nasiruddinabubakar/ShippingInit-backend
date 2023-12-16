@@ -36,7 +36,7 @@ router.post("/neworder", verifyToken, async (req, res) => {
 
   try {
     await saveOrder(order, userID);
-    const result = await query("Select email from user where user_id = ?", [
+    const result = await query("Select email from `USER` where user_id = ?", [
       userID,
     ]);
     sendMail(result[0].email);
