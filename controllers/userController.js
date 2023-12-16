@@ -13,7 +13,7 @@ const saveUser = async (user) => {
   const hash = await bcrypt.hash(password, salt);
 
   const userQuery =
-    "INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)";
+    "INSERT INTO `user` (user_id, email, password, role) VALUES (?, ?, ?, ?)";
   const userValues = [id, mail, hash, "customer"];
 
   query(userQuery, userValues);
@@ -31,7 +31,7 @@ const loginUser = (user, callback) => {
   const { mail, password } = user;
   console.log(user);
 
-  con.query("SELECT * FROM USER WHERE email = ?", [mail], (err, result) => {
+  con.query("SELECT * FROM `USER` WHERE email = ?", [mail], (err, result) => {
     if (err) {
       console.error("Error fetching user:", err);
       return callback(err, null);

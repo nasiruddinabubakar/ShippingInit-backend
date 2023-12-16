@@ -12,7 +12,7 @@ router.post("/register", async (req, res) => {
   try {
     const newuser = req.body;
 
-    const result =  await query("select * from user where email= ?", [
+    const result =  await query("select * from `user` where email= ?", [
       newuser.mail,
     ]);
 

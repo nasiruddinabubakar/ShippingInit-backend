@@ -14,13 +14,13 @@ const saveCompany = async (company) => {
     const hash = await bcrypt.hash(password, salt);
 
     const userQuery =
-      "INSERT INTO user (user_id, email, password, role) VALUES (?, ?, ?, ?)";
+      "INSERT INTO `user` (user_id, email, password, role) VALUES (?, ?, ?, ?)";
     const userValues = [id, mail, hash, "company"];
 
     await query(userQuery, userValues);
 
     const companyQuery =
-      "INSERT INTO Company (company_id, name, phone_number, country, sales, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+      "INSERT INTO `Company` (company_id, name, phone_number, country, sales, user_id) VALUES (?, ?, ?, ?, ?, ?)";
     const companyValues = [uuidv4(), name, phone_no, address, 0, id];
 
     await query(companyQuery, companyValues);
@@ -36,7 +36,7 @@ const saveCompany = async (company) => {
 const loginCompany = async (company) => {
   const { mail, password } = company;
 
-  const userResult = await query("SELECT * FROM user WHERE email = ?", [mail]);
+  const userResult = await query("SELECT * FROM `user` WHERE email = ?", [mail]);
 
   if (userResult.length === 0) {
     throw new Error("User not found");
@@ -47,7 +47,7 @@ const loginCompany = async (company) => {
   if (isMatch) {
     const userID = userResult[0].user_id;
     const companyResult = await query(
-      "SELECT * FROM Company WHERE user_id = ?",
+      "SELECT * FROM `Company` WHERE user_id = ?",
       [userID]
     );
 

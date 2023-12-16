@@ -17,7 +17,7 @@ const saveOrder = async (order, userID) => {
   var deliverydate = futureDate;
   console.log(deliverydate);
   const result = await query(
-    "Select Customer_id from Customer where user_id = ?",
+    "Select Customer_id from `Customer` where user_id = ?",
     [userID]
   );
   const customerId = result[0].Customer_id;
@@ -25,7 +25,7 @@ const saveOrder = async (order, userID) => {
   try {
     con.beginTransaction();
     await query(
-      "Insert into Cargo(cargo_id, consignee_name, weight_in_tonne, type, description, fragile) values (?,?,?,?,?,?)",
+      "Insert into `Cargo`(cargo_id, consignee_name, weight_in_tonne, type, description, fragile) values (?,?,?,?,?,?)",
       [
         cargoId,
         consigneeName,
@@ -36,7 +36,7 @@ const saveOrder = async (order, userID) => {
       ]
     );
     const updateWeightQuery =
-      "UPDATE Ship SET currentWeight = currentWeight + ? WHERE ship_id = ?";
+      "UPDATE `Ship` SET currentWeight = currentWeight + ? WHERE ship_id = ?";
     const updateWeightValues = [orderWeight, shipId];
     const updateWeightResult = await query(
       updateWeightQuery,
@@ -44,7 +44,7 @@ const saveOrder = async (order, userID) => {
     );
     const booking_id = uuidv4();
     await query(
-      "INSERT INTO booking(booking_id, booking_date, delivery_date, pickup, dropoff, ship_id, cargo_id, customer_id, delivered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO `booking`(booking_id, booking_date, delivery_date, pickup, dropoff, ship_id, cargo_id, customer_id, delivered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         booking_id,
         new Date(),
@@ -58,7 +58,7 @@ const saveOrder = async (order, userID) => {
       ]
     );
     await query(
-      "INSERT INTO Invoices(invoice_id,amount_due,booking_id) values(?, ?, ?)",
+      "INSERT INTO `Invoices`(invoice_id,amount_due,booking_id) values(?, ?, ?)",
        [uuidv4(), price,booking_id]
     );
     con.commit();
@@ -74,7 +74,7 @@ const saveOrder = async (order, userID) => {
 const getDetails = async (userID) => {
   try {
     const result = await query(
-      "Select Customer_id from Customer where user_id = ?",
+      "Select Customer_id from `Customer` where user_id = ?",
       [userID]
     );
     const customerId = result[0].Customer_id;
@@ -82,7 +82,7 @@ const getDetails = async (userID) => {
     console.log(customerId);
     // await query("CALL UpdateDeliveredStatusNew()");
     const orders = await query(
-      "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM booking JOIN customer ON booking.customer_id = customer.customer_id JOIN cargo ON booking.cargo_id = cargo.cargo_id WHERE customer.customer_id = ? AND booking.isdeleted = ?",
+      "SELECT booking_id,consignee_name, pickup, dropoff,delivered FROM `booking` JOIN `customer` ON `booking`.`customer_id` = `customer`.`customer_id` JOIN `cargo` ON `booking`.`cargo_id` = `cargo`.`cargo_id` WHERE `customer`.`customer_id` = ? AND `booking`.`isdeleted` = ?",
       [customerId,0]
     );
     return orders;
