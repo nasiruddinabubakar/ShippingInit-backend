@@ -249,7 +249,7 @@ router.post("/route", async (req, res) => {
   console.log(pickup, dropoff);
   try {
     const result = await query(
-      "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM Ship s JOIN Route r ON s.ship_id = r.ship_id JOIN Lag l1 ON r.route_id = l1.route_id JOIN Lag l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no and s.is_deleted=?",
+      "SELECT s.ship_id, s.name, s.image, (l2.time - l1.time) AS timeTaken FROM `ship` s JOIN `route` r ON s.ship_id = r.ship_id JOIN `lag` l1 ON r.route_id = l1.route_id JOIN `lag` l2 ON r.route_id = l2.route_id WHERE  (l1.country = ? AND l2.country = ?) AND CURRENT_DATE <= s.start_date + INTERVAL l1.time DAY AND  l2.lag_no > l1.lag_no and s.is_deleted=?",
       [pickup, dropoff,0]
     );
 
