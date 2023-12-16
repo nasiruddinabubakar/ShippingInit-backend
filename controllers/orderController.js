@@ -74,7 +74,7 @@ const saveOrder = async (order, userID) => {
 const getDetails = async (userID) => {
   try {
     const result = await query(
-      "Select Customer_id from `Customer` where user_id = ?",
+      "Select Customer_id from `customer` where user_id = ?",
       [userID]
     );
     const customerId = result[0].Customer_id;
