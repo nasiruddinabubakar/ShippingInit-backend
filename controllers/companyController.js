@@ -47,7 +47,7 @@ const loginCompany = async (company) => {
   if (isMatch) {
     const userID = userResult[0].user_id;
     const companyResult = await query(
-      "SELECT * FROM `Company` WHERE user_id = ?",
+      "SELECT * FROM `company` WHERE user_id = ?",
       [userID]
     );
 
