@@ -68,10 +68,10 @@ router.get("/:myVar", verifyToken, async (req, res) => {
   console.log(myVar);
   try {
     const orderDetail = await query(
-      "select weight_in_tonne, ship.name,email,isdeleted from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
+      "select consignee_name, pickup, dropoff,booking_date, delivery_date, weight_in_tonne, ship.image, ship.name AS 'shipName',email, company.name, company.country,isdeleted from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
       [myVar]
     );
-    console.log(orderDetail[0]);
+    console.log(orderDetail);
     return res.status(200).json({ status: "success", booking: orderDetail[0] });
   } catch (err) {
     console.error(err.meesage);
@@ -96,10 +96,11 @@ function verifyToken(req, res, next) {
         // Token verification succeeded,
         console.log("User ID:", decoded.user_id);
         userID = decoded.user_id;
+        next();
       }
     });
   }
-  next();
+ 
 }
 
 module.exports = router;
