@@ -4,9 +4,9 @@ const jwt = require("jsonwebtoken");
 const jwtToken = "db-project";
 const router = express.Router();
 const util = require("util");
-
+let userID = null;
 const query = util.promisify(con.query).bind(con);
-const { saveUser, loginUser } = require("../controllers/userController");
+const { saveUser, loginUser, getUser } = require("../controllers/userController");
 
 router.post("/register", async (req, res) => {
   try {
@@ -55,6 +55,20 @@ router.post("/login", (req, res) => {
   });
 });
 
+router.get('/getuser',verifyToken,async (req,res)=>{
+  try {
+    const orders = await getUser(userID);
+    return res.status(200).json({ status: "success", ...orders });
+  } catch (err) {
+    console.error(err.message);
+    return res.json("Internal Server Error");
+  }
+
+
+
+
+})
+
 router.get("/authorization", (req, res) => {
   let token = req.headers["authorization"];
 
@@ -77,5 +91,30 @@ router.get("/authorization", (req, res) => {
 });
 
 
+
+
+
+function verifyToken(req, res, next) {
+  let token = req.headers["authorization"];
+
+  if (token) {
+    jwt.verify(token, jwtToken, (err, decoded) => {
+      if (err) {
+        // Token verification failed
+        console.error("Token verification failed:", err);
+        return res
+          .status(400)
+          .json({ status: "failed", meesage: "Token failed." });
+      } else {
+        // Token verification succeeded,
+        console.log("User ID:", decoded.user_id);
+        userID = decoded.user_id;
+        next();
+      }
+    });
+   
+  }
+
+}
 
 module.exports = router;
