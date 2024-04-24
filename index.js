@@ -17,6 +17,70 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/ships", shipRoutes);
 app.use("/api/company", companyRoutes);
 
+const http = require('http')
+// const server = http.createServer(app)
+
+const {Server} = require('socket.io') 
+const { Socket } = require('dgram')
+
+const server = app.listen(5000, () => {
+    console.log("listening...");
+  });
+  const io = new Server(server, {
+    cors: {
+      origin: "*"
+    }
+  })
+
+  io.on('connection', async (socket)=>{
+    console.log("user connected")
+    const token = socket.handshake.auth.token
+    socket.broadcast.emit('getOnlineUser', {user_id: token})
+    const sql = `UPDATE user SET status = ? WHERE user_id = ?`;
+    await db.query(sql, ['1', token], (err, result) => {
+        if (err) {
+        console.error("Error updating user status:", err);
+        return;
+        }
+        console.log("User status updated successfully");
+    });
+    socket.on('messege', async (messege)=>{
+        io.emit('messege', messege)
+    })
+    socket.on('disconnect', async ()=>{
+        socket.broadcast.emit('getOfflineUser', {user_id: token})
+        const sql = `UPDATE user SET status = ? WHERE user_id = ?`;
+         await db.query(sql, ['0', token], (err, result) => {
+            if (err) {
+            console.error("Error updating user status:", err);
+            return;
+            }
+            console.log("User status updated successfully");
+        });
+    })
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.get('/api/countries',async (req,res)=>{
 
   const countries = await new Promise((resolve, reject) => {
@@ -41,7 +105,3 @@ app.all("*", (req, res, next) => {
 
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
-});
