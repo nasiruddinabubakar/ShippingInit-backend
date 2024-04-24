@@ -9,10 +9,12 @@ const router = express.Router();
 
 
 router.get('/get-user-chats',async (req,res)=>{
-
-    const userID = req.header["userID"];
+    console.log(req.headers);
+    const userID = req.headers["userid"];
 
     const companyData = await getUserChats(userID);
 
-    return res
+    return res.status(200).json(companyData);
 })
+
+module.exports = router;
