@@ -42,22 +42,70 @@ const io = new Server(server, {
   },
 });
 
+
+const onlineUsers = new Set(); // Set to store online users
+
+
+
 io.on('connection', async (socket) => {
   const token = socket.handshake.auth.token;
   console.log('user connected with token: ', token);
-  socket.broadcast.emit('getOnlineUser', { user_id: token });
+  onlineUsers.add(token);
+  // Broadcast online users to all clients
+  io.emit('onlineUsers', Array.from(onlineUsers));
+
+
   
  
   socket.on('messege', async (messege) => {
     io.emit('messege', messege);
   });
+  socket.on("bye",(user_id)=>{
+    console.log('user disconnected with id',user_id);
+    onlineUsers.delete(user_id);
+  })
   socket.on('disconnect', async () => {
-    console.log('user disconnected');
-    socket.broadcast.emit('getOfflineUser', { user_id: token });
+    console.log('user disconnected with id');
+    // onlineUsers.delete(socket.id);
+
+    console.log(onlineUsers);
+    // Broadcast updated online users to all clients
+    io.emit('onlineUsers', Array.from(onlineUsers));
+
    
    
   });
+  socket.on('joinChatRoom', ({ userId, companyId }) => {
+    const chatRoom = `${userId}_${companyId}`; // Unique room identifier
+    socket.join(chatRoom);
+  });
+  socket.on('sendMessage', ({ userId, companyId, message }) => {
+    const chatRoom = `${userId}_${companyId}`;
+    io.to(chatRoom).emit('newMessage', { userId, companyId, message });
+  });  
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.get('/api/countries', async (req, res) => {
   const countries = await new Promise((resolve, reject) => {

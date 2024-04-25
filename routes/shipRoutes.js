@@ -196,7 +196,7 @@ router.post("/newship", async (req, res) => {
       `https://restcountries.com/v3.1/name/${country}?fullText=true&fields=latlng`
     );
     const response = await apiRequest.json();
-
+    console.log(response);
     return {
       country,
       latlng: response[0].latlng,
