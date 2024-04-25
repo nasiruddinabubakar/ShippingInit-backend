@@ -42,10 +42,9 @@ const io = new Server(server, {
   },
 });
 
-
 const onlineUsers = new Set(); // Set to store online users
 
-
+//connection
 
 io.on('connection', async (socket) => {
   const token = socket.handshake.auth.token;
@@ -54,58 +53,31 @@ io.on('connection', async (socket) => {
   // Broadcast online users to all clients
   io.emit('onlineUsers', Array.from(onlineUsers));
 
-
-  
- 
-  socket.on('messege', async (messege) => {
-    io.emit('messege', messege);
+  //chat room
+  socket.on('joinChatRoom', ({ user_id, company_id }) => {
+    const chatRoom = `${user_id}_${company_id}`; // Unique room identifier
+    socket.join(chatRoom);
+    console.log('user joined chat room', chatRoom);
   });
-  socket.on("bye",(user_id)=>{
-    console.log('user disconnected with id',user_id);
-    onlineUsers.delete(user_id);
-  })
+  socket.on(
+    'sendMessage',
+    ({ user_id, company_id, sender_id, receiver_id, message }) => {
+      const chatRoom = `${user_id}_${company_id}`;
+      console.log('user sent message to chat room', chatRoom, message);
+      io.to(chatRoom).emit('newMessage', { sender_id, receiver_id, message });
+    }
+  );
+
+  // Disconnect event
   socket.on('disconnect', async () => {
-    console.log('user disconnected with id',token);
+    console.log('user disconnected with id', token);
     onlineUsers.delete(token);
 
     console.log(onlineUsers);
     // Broadcast updated online users to all clients
     io.emit('onlineUsers', Array.from(onlineUsers));
-
-   
-   
   });
-  socket.on('joinChatRoom', ({ userId, companyId }) => {
-    const chatRoom = `${userId}_${companyId}`; // Unique room identifier
-    socket.join(chatRoom);
-  });
-  socket.on('sendMessage', ({ userId, companyId, message }) => {
-    const chatRoom = `${userId}_${companyId}`;
-    io.to(chatRoom).emit('newMessage', { userId, companyId, message });
-  });  
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 app.get('/api/countries', async (req, res) => {
   const countries = await new Promise((resolve, reject) => {
