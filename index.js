@@ -65,8 +65,8 @@ io.on('connection', async (socket) => {
     onlineUsers.delete(user_id);
   })
   socket.on('disconnect', async () => {
-    console.log('user disconnected with id');
-    // onlineUsers.delete(socket.id);
+    console.log('user disconnected with id',token);
+    onlineUsers.delete(token);
 
     console.log(onlineUsers);
     // Broadcast updated online users to all clients
