@@ -58,10 +58,25 @@ io.on('connection', async (socket) => {
   io.emit('onlineUsers', Array.from(onlineUsers));
 
   //chat room
-  socket.on('joinChatRoom', ({ user_id, company_id }) => {
+  socket.on('joinChatRoom', async ({ user_id, company_id }) => {
     const chatRoom = `${user_id}_${company_id}`; // Unique room identifier
+    const chats = await query(
+      `
+    SELECT *
+    FROM messages
+    WHERE (sender_id = ? AND recipient_id = ?)
+       OR (sender_id = ? AND recipient_id = ?)
+    ORDER BY timestamp;
+`,
+      [user_id, company_id, company_id, user_id]
+    );
+
+    console.log(chats);
+    socket.emit('chatHistory', { chats });
+
     socket.join(chatRoom);
     console.log('user joined chat room', chatRoom);
+ 
   });
   socket.on(
     'sendMessage',
@@ -69,9 +84,18 @@ io.on('connection', async (socket) => {
       const chatRoom = `${user_id}_${company_id}`;
       console.log('user sent message to chat room', chatRoom, message);
       await query(
-        'INSERT INTO messages (message_id, sender_id, recipient_id, content,timestamp) VALUES (?, ?, ?, ?,CURRENT_TIMESTAMP)',
-        [uuidv4(),sender_id,receiver_id,message]
+        'INSERT INTO messages (message_id, sender_id, recipient_id, message,timestamp) VALUES (?, ?, ?, ?,CURRENT_TIMESTAMP)',
+        [uuidv4(), sender_id, receiver_id, message]
       );
+      const room = io.sockets.adapter.rooms.get(chatRoom);
+      const clients = room ? Array.from(room) : [];
+      if (clients.length === 1) {
+        console.log('only one user in chat room');
+        // Emit message to sender only
+        console.log("users",onlineUsers);
+        io.to(receiver_id).emit('notification', { senderId: user_id, message });
+        console.log(receiver_id, user_id, message)
+      }
       io.to(chatRoom).emit('newMessage', { sender_id, receiver_id, message });
     }
   );
