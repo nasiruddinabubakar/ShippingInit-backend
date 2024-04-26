@@ -9,6 +9,10 @@ const cors = require('cors');
 const globalErrorHandler = require('./controllers/errorController');
 const con = require('./database/db');
 const app = express();
+const { v4: uuidv4 } = require('uuid');
+const util = require('util');
+
+const query = util.promisify(con.query).bind(con);
 
 app.use(express.json());
 app.use(
@@ -61,9 +65,13 @@ io.on('connection', async (socket) => {
   });
   socket.on(
     'sendMessage',
-    ({ user_id, company_id, sender_id, receiver_id, message }) => {
+    async ({ user_id, company_id, sender_id, receiver_id, message }) => {
       const chatRoom = `${user_id}_${company_id}`;
       console.log('user sent message to chat room', chatRoom, message);
+      await query(
+        'INSERT INTO messages (message_id, sender_id, recipient_id, content,timestamp) VALUES (?, ?, ?, ?,CURRENT_TIMESTAMP)',
+        [uuidv4(),sender_id,receiver_id,message]
+      );
       io.to(chatRoom).emit('newMessage', { sender_id, receiver_id, message });
     }
   );
