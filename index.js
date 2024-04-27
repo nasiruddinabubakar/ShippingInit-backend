@@ -46,16 +46,18 @@ const io = new Server(server, {
   },
 });
 
-const onlineUsers = new Set(); // Set to store online users
+const socketIdMap = {}; // Set to store online users
 
 //connection
 
 io.on('connection', async (socket) => {
   const token = socket.handshake.auth.token;
   console.log('user connected with token: ', token);
-  onlineUsers.add(token);
+  const socketID = socket.id;
+  socketIdMap[token] = socketID;
+
   // Broadcast online users to all clients
-  io.emit('onlineUsers', Array.from(onlineUsers));
+  io.emit('onlineUsers',Object.keys(socketIdMap));
 
   //chat room
   socket.on('joinChatRoom', async ({ user_id, company_id }) => {
@@ -90,11 +92,14 @@ io.on('connection', async (socket) => {
       const room = io.sockets.adapter.rooms.get(chatRoom);
       const clients = room ? Array.from(room) : [];
       if (clients.length === 1) {
-        console.log('only one user in chat room');
-        // Emit message to sender only
-        console.log("users",onlineUsers);
-        io.to(receiver_id).emit('notification', { senderId: user_id, message });
-        console.log(receiver_id, user_id, message)
+        const receiverSocketId = socketIdMap[receiver_id];
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('newnotification', {
+            sender_id,
+            receiver_id,
+            message,
+          });
+        }
       }
       io.to(chatRoom).emit('newMessage', { sender_id, receiver_id, message });
     }
@@ -103,11 +108,11 @@ io.on('connection', async (socket) => {
   // Disconnect event
   socket.on('disconnect', async () => {
     console.log('user disconnected with id', token);
-    onlineUsers.delete(token);
+    delete socketIdMap[token];
 
-    console.log(onlineUsers);
+    console.log(socketIdMap);
     // Broadcast updated online users to all clients
-    io.emit('onlineUsers', Array.from(onlineUsers));
+    io.emit('onlineUsers',Object.keys(socketIdMap));
   });
 });
 
