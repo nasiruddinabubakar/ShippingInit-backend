@@ -75,7 +75,7 @@ router.get('/:myVar', verifyToken, async (req, res) => {
   console.log(myVar);
   try {
     const orderDetail = await query(
-      "select consignee_name, pickup, dropoff,booking_date, delivery_date, weight_in_tonne, ship.image, ship.name AS 'shipName',email, company.name,company.phone_number, company.country,isdeleted from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
+      "select consignee_name, pickup, dropoff,booking_date, delivery_date, weight_in_tonne, ship.image, ship.name AS 'shipName',email, company.name AS 'company_name',company.user_id, company.phone_number, company.country,isdeleted from booking join cargo on booking.cargo_id=cargo.cargo_id join ship on booking.ship_id=ship.ship_id join company on ship.company_id = company.company_id join user on company.user_id=user.user_id where booking_id = ?",
       [myVar]
     );
     console.log(orderDetail);

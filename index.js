@@ -86,8 +86,8 @@ io.on('connection', async (socket) => {
       const chatRoom = `${user_id}_${company_id}`;
       console.log('user sent message to chat room', chatRoom, message);
       await query(
-        'INSERT INTO messages (message_id, sender_id, recipient_id, message,timestamp) VALUES (?, ?, ?, ?,CURRENT_TIMESTAMP)',
-        [uuidv4(), sender_id, receiver_id, message]
+        'INSERT INTO messages (message_id, sender_id, recipient_id, message,timestamp,isRead) VALUES (?, ?, ?, ?,CURRENT_TIMESTAMP,?)',
+        [uuidv4(), sender_id, receiver_id, message,1]
       );
       const room = io.sockets.adapter.rooms.get(chatRoom);
       const clients = room ? Array.from(room) : [];

@@ -8,10 +8,34 @@ const getUserChats = async (userID) => {
   console.log(userID);
   try {
     const result = await query(
-      `SELECT DISTINCT c.user_id, c.name FROM company c JOIN ship s ON c.company_id = s.company_id
-    JOIN booking b ON s.ship_id = b.ship_id
-    JOIN customer cu ON b.customer_id = cu.customer_id
-    WHERE cu.user_id = ?`,
+      `SELECT 
+      c.user_id AS user_id,
+      c.name AS name,
+      m.message AS last_message
+  FROM 
+      company c
+  JOIN 
+      ship s ON c.company_id = s.company_id
+  JOIN 
+      booking b ON s.ship_id = b.ship_id
+  JOIN 
+      customer cu ON b.customer_id = cu.customer_id
+  JOIN 
+      messages m ON (m.sender_id = cu.user_id OR m.recipient_id = cu.user_id)
+  WHERE 
+      cu.user_id = ?
+      AND (m.sender_id = cu.user_id OR m.recipient_id = cu.user_id)
+      AND m.timestamp = (
+          SELECT MAX(timestamp)
+          FROM messages
+          WHERE (sender_id = cu.user_id OR recipient_id = cu.user_id)
+              AND (sender_id = c.user_id OR recipient_id = c.user_id)
+      )
+  GROUP BY 
+      c.user_id, c.name
+  ORDER BY 
+      MAX(m.timestamp) DESC;
+  `,
       [userID]
     );
     console.log(result);
