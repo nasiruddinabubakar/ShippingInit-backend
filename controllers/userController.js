@@ -31,7 +31,7 @@ const loginUser = (user, callback) => {
   const { mail, password } = user;
   console.log(user);
 
-  con.query('SELECT * FROM `USER` WHERE email = ?', [mail], (err, result) => {
+  con.query('SELECT u.*, cu.name FROM `USER` u join `customer` cu on u.user_id = cu.user_id WHERE email = ?', [mail], (err, result) => {
     if (err) {
       console.error('Error fetching user:', err);
       return callback(err, null);

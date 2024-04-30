@@ -28,6 +28,7 @@ router.post('/register', async (req, res) => {
 
     const newUser = await saveUser(newuser);
     delete newUser.password;
+    console.log(newUser);
     const id = newUser.id;
     const token = jwt.sign({ id }, jwtToken, { expiresIn: '2h' });
 
@@ -50,7 +51,7 @@ router.post('/login', (req, res) => {
         .status(500)
         .json({ status: 'failed', message: 'Invalid Email or password' });
     }
-    delete newuser.password;
+    delete result.password;
     const { user_id } = result;
     console.log(user_id);
     jwt.sign({ user_id }, jwtToken, { expiresIn: '2h' }, (err, token) => {
