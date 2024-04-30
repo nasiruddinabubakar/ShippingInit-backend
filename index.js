@@ -17,11 +17,7 @@ const query = util.promisify(con.query).bind(con);
 app.use(express.json());
 app.use(
   cors({
-    origin: [
-      'https://shipping-init.vercel.app',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
+    origin:'*'
   })
 );
 //mount user routes
