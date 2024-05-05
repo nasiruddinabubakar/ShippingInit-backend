@@ -48,7 +48,7 @@ router.post('/login', (req, res) => {
     if (err) {
       console.error(err);
       return res
-        .status(500)
+        .status(400)
         .json({ status: 'failed', message: 'Invalid Email or password' });
     }
     delete result.password;
