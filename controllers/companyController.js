@@ -47,7 +47,7 @@ const loginCompany = async (company) => {
   if (isMatch) {
     const userID = userResult[0].user_id;
     const companyResult = await query(
-      "SELECT * FROM `COMPANY` WHERE user_id = ?",
+      "SELECT * FROM `company` WHERE user_id = ?",
       [userID]
     );
 
@@ -71,18 +71,18 @@ const getDetails = async (companyID) => {
   };
 
   const shipResult = await query(
-    "select count(s.ship_id) as no_ships from ship s where s.company_id = ? ",
+    "select (s.ship_id) countas no_ships from ship s where s.company_id = ? ",
     [companyID]
   );
   companyData.noShips = shipResult[0].no_ships;
 
   const orderResult = await query(
-    "SELECT COUNT( b.booking_id) AS order_count from booking b  JOIN Ship s ON b.ship_id = s.ship_id JOIN Company co ON s.company_id = co.company_id WHERE co.company_id = ?",
+    "SELECT COUNT( b.booking_id) AS order_count from booking b  JOIN Ship s ON b.ship_id = s.ship_id JOIN company co ON s.company_id = co.company_id WHERE co.company_id = ?",
     [companyID]
   );
   companyData.noOrders = orderResult[0].order_count;
   const customerResult = await query(
-    "SELECT COUNT(DISTINCT c.customer_id) AS customer_count FROM Customer c JOIN booking b ON c.customer_id = b.customer_id JOIN Ship s ON b.ship_id = s.ship_id JOIN Company co ON s.company_id = co.company_id WHERE co.company_id = ?",
+    "SELECT COUNT(DISTINCT c.customer_id) AS customer_count FROM customer c JOIN booking b ON c.customer_id = b.customer_id JOIN Ship s ON b.ship_id = s.ship_id JOIN Company co ON s.company_id = co.company_id WHERE co.company_id = ?",
     [companyID]
   );
   companyData.noCustomers = customerResult[0].customer_count;
